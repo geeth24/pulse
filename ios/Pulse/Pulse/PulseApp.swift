@@ -12,7 +12,7 @@ import SwiftData
 struct PulseApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            ItemURL.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -26,6 +26,8 @@ struct PulseApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(.dark)
+                .tint(Color("AccentColor"))
         }
         .modelContainer(sharedModelContainer)
     }

@@ -6,13 +6,16 @@
 //
 
 import Foundation
-import SwiftData
 
-@Model
-final class Item {
-    var timestamp: Date
-    
-    init(timestamp: Date) {
-        self.timestamp = timestamp
-    }
+
+struct Item: Encodable, Decodable, Hashable {
+    var name: String
+    var price: String
+    var availability: String
+    var url: String
 }
+
+struct MultipleURLRequestBody: Codable {
+    let urls: [String]
+}
+

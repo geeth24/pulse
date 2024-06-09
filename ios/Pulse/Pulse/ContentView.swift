@@ -7,55 +7,111 @@
 
 import SwiftUI
 import SwiftData
-
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+   
+    @StateObject var viewModel = ViewModel()
+    @Query private var items: [ItemURL]
+    @State var showNewURLSheet: Bool = false
+    
+    @State var showIpField: Bool = false
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+        NavigationStack{
+            List{
+                Section(header: Text("URL Items")) {
+                    
+                    
+                        NavigationLink {
+                            ItemURLSView()
+                        } label: {
+                            Text("Items")
+                        }
+                        
+                    
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
-        }
-    }
+                Section(header: Text("Items")) {
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
+                        ForEach(viewModel.item, id: \.self) { item in
+                            VStack(alignment: .leading, spacing: 0.0){
+                                Text(item.name)
+                                    .font(.headline)
+                                    .fontWeight(.bold)
+                                    .padding(.bottom, 8)
+                                
+                                Divider()
+                                
+                                HStack {
+                                    
+                                    HStack{
+                                        Text(item.price)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                        
+                                        Text(item.availability)
+                                            .font(.subheadline)
+                                            .fontWeight(.semibold)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Link(destination: URL(string: "\(item.url)")!, label: {
+                                        Image(systemName: "arrow.up.right.square")
+                                    })
+                                    
+                                    
+                                    
+                                    
+                                }
+                                .padding(.top, 8)
+                            }
+                            .foregroundStyle(item.availability.contains("In") ? Color("PulseGreen") : Color("PulseRed"))
+                           
+                        }
+                    }
+                
+             
+            }
+            .listStyle(.inset)
+            .toolbar(content: {
+                Button{
+                    showNewURLSheet = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+                
+            })
+            .sheet(isPresented: $showNewURLSheet, content: {
+                NewURLView()
+                    .presentationDetents([.height(200)])
+            })
+            .onAppear(){
+                let urls = items.compactMap { $0.url }
+                viewModel.fetchMultipleURLs(urls: urls)
+                
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            }
+            .refreshable {
+                let urls = items.compactMap { $0.url }
+                viewModel.fetchMultipleURLs(urls: urls)
+            }
+            .navigationTitle("Pulse Tracker")
+            .alert("Enter IP", isPresented: $showIpField){
+                TextField("192.168.1.1", text: $viewModel.ipAddress)
+                    .foregroundStyle(Color("PulseGreen"))
+                Button("Ok"){
+                    
+                }
+            }
+            .onAppear(){
+                if viewModel.ipAddress == ""{
+                    showIpField = true
+                }
             }
         }
+        
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: ItemURL.self, inMemory: true)
 }

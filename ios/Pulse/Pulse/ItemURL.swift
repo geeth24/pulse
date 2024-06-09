@@ -6,3 +6,13 @@
 //
 
 import Foundation
+import SwiftData
+
+@Model
+final class ItemURL {
+    var url: String?
+    
+    init(url: String) {
+        self.url = url
+    }
+}
