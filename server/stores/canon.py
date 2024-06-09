@@ -32,7 +32,8 @@ def canon(url: str):
         return {
             "name": product_name,
             "price": price,
-            "availability": availability
+            "availability": availability,
+            "url": url
         }
     else:
         print("Failed to retrieve the webpage, Status Code:", response.status_code)
