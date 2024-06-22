@@ -105,6 +105,7 @@ struct Provider: TimelineProvider {
                         let decoder = JSONDecoder()
                         let jsonData = try decoder.decode([Item].self, from: data)
                         let entry = SimpleEntry(date: Date(), item: jsonData)
+                       
                         let timeline = Timeline(entries: [entry], policy: .after(.now.advanced(by: 14400)))
                         
                         completion(timeline)
