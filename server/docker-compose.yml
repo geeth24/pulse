@@ -1,0 +1,10 @@
+services:
+  pulse:
+    build: .
+    ports:
+      - "8001:8000"
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - HOST=0.0.0.0
+    restart: always
