@@ -1,48 +1,66 @@
-import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
-import random
+import time
+
 
 def canon(url: str):
-    # Using a session object
-    session = requests.Session()
+    chrome_options = Options()
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-setuid-sandbox")
+    chrome_options.add_argument(
+        "--disable-software-rasterizer"
+    )  # Avoid hardware acceleration issues
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument(
+        "--window-size=1920,1080"
+    )  # Set window size for non-headless mode
 
-    # Set a user-agent to mimic a web browser request
-    user_agents = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.85 Safari/537.36'
-    ]
+    # Use a fake user-agent to mimic a real browser
+    chrome_options.add_argument(
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    )
 
-    headers = {
-        'User-Agent': random.choice(user_agents),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Referer': 'https://www.google.com/'
-    }
+    # Connect to the remote Selenium Chrome instance
+    driver = webdriver.Remote(
+        command_executor="http://chrome:4444/wd/hub",
+        options=chrome_options,
+    )
 
-    # Make the request with headers
-    response = session.get(url, headers=headers)
+    try:
+        driver.get(url)
+        time.sleep(5)  # Wait for the page to fully load
 
-    # Check if the request was successful
-    if response.status_code == 200:
-        # Parse the HTML content
-        soup = BeautifulSoup(response.text, 'html.parser')
+        # Parse page source with BeautifulSoup
+        soup = BeautifulSoup(driver.page_source, "html.parser")
 
-        # Extracting product details
-        product_name = soup.find('span', class_='base').text.strip() if soup.find('span', class_='base') else "Not found"
-        price = soup.find('span', class_='price').text.strip() if soup.find('span', class_='price') else "Not found"
+        # Extract product name
+        product_name = (
+            soup.find("span", {"data-ui-id": "page-title-wrapper"}).text.strip()
+            if soup.find("span", {"data-ui-id": "page-title-wrapper"})
+            else "Not found"
+        )
 
-        # Check if the product is in stock
-        availability_tag = soup.find('div', text=lambda x: x and "In Stock" in x)
+        # Extract product price
+        price_container = soup.find("span", {"data-price-type": "finalPrice"})
+        price = (
+            price_container.find("span", class_="price").text.strip()
+            if price_container and price_container.find("span", class_="price")
+            else "Not found"
+        )
+
+        # Check availability
+        availability_tag = soup.find("div", text=lambda x: x and "In Stock" in x)
         availability = "In Stock" if availability_tag else "Out of Stock"
 
+        # Return the product information
         return {
             "name": product_name,
             "price": price,
             "availability": availability,
-            "url": url
+            "url": url,
         }
-    else:
-        print("Failed to retrieve the webpage, Status Code:", response.status_code)
-        return None
+
+    finally:
+        driver.quit()

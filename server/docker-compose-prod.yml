@@ -12,7 +12,7 @@ services:
       - chrome
 
   chrome:
-    image: seleniarm/standalone-chromium  # For ARM, or use seleniarm/standalone-chrome for a full Chrome experience
+    image: selenium/standalone-chrome  # Use for AMD/x86_64 processors
     shm_size: "4gb"  # Increase shared memory
     environment:
       - SE_START_XVFB=true  # Enable Xvfb for non-headless operation
